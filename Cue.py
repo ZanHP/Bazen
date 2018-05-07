@@ -10,15 +10,17 @@ class Cue():
         self.y0 = y0
 
         # potrebujemo za smerni vektor udarca
-        self.x = 0
-        self.y = 0
+        self.x = 100
+        self.y = 100
 
         # normiramo šele, ko je poklicana funkcija hit
         self.direction = (self.x0 - self.x, self.y0 - self.y)
 
         self.canvas = canvas
 
+        # narišemo palico
         self.id = canvas.create_line(x0+D,y0+D, x0+2*D,y0+2*D, width=3)
+
         self.canvas.bind("<B1-Motion>", self.move)
         self.canvas.bind("<ButtonRelease-3>", self.move2)
 
