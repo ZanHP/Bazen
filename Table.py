@@ -1,5 +1,5 @@
 from tkinter import *
-import Ball as ball
+import CueBall as ball
 import Cue as cue
 
 W = 353
@@ -27,7 +27,7 @@ class Table():
         #self.cloth.create_polygon(D,D,W-D,D,W-D,H-D,D,H-D, fill='blue')
 
         # razred Table vsebuje objekte tipa Ball in Cue, ne pa njihovih podatkov
-        self.cueBall = ball.Ball('white', cueX, cueY, self.cloth)
+        self.cueBall = ball.CueBall('white', cueX, cueY, self.cloth)
         self.cue = cue.Cue(cueX, cueY, self.cloth)
 
 
