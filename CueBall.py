@@ -2,9 +2,13 @@ from tkinter import *
 
 k = 0.3 # trenje mize
 dt0 = 0.5 # casovni interval
-eps = 10 # toleranca pri upostevanju hitrosti
+eps = 2 # toleranca pri upostevanju hitrosti
 epsRob = 2 # toleranca pri upogibu roba, sicer problem pri zaznavanju odboja
 B = 0.7 # upogib bande pri odboju vpliva na smeri odbite kugle
+rot = 0.025 # vpliv bande na povacanje rotacije odbite kugle
+
+d = 15 # oddaljenost sredisca kroga preverjanja padca v luknjo
+rVogal = 40 # radij tega kroga
 
 class CueBall():
     def __init__(self, barva, R, x, y, vx, vy, canvas):
@@ -83,7 +87,7 @@ class CueBall():
             # cas manjsamo, dokler nista drugi krajisci na mizi
             # Ker smo najprej poskusili s casom dt0 in pri tem dobili hitrost
             # po tem casu, moramo, ce zelimo daljico povleci do prejsnjega trenutka,
-            # tudi primerno povacati hitrost.
+            # tudi primerno povecati hitrost.
             dt = dt0
             while not (self.R - epsRob <= mx <= W - self.R + epsRob) or \
                     not (self.R - epsRob <= my <= H - self.R + epsRob):
@@ -95,22 +99,76 @@ class CueBall():
             self.x = mx
             self.y = my
 
+            N = self.vx**2 + self.vy**2
+            #print("00:vx,vy", self.vx, self.vy)
+
             # preverimo odboje
             # Ce se kugla odbija, obrnemo smer hitrosti,
             # to se pozna pri naslednjem koraku zanke.
             # Z 0<B<1 mnozimo tisto koordinato hitrosti, ki ne obrne smeri,
-            # saj je tak odboj je bolj realen.
-            if self.y <= self.R or H - self.y <= self.R:  # odboj zgoraj ali spodaj
+            # tak odboj je potem bolj realen.
+            if self.y <= self.R:  # odboj zgoraj
                 self.vy = - self.vy
-                self.vx = self.vx * B * (1 + self.spin)
-                self.spin += 3/800 * self.vx
-            if self.x <= self.R or W - self.x <= self.R: # odboj levo ali desno
+                if self.vx < 0:
+                    self.vx = self.vx * B * (1 - self.spin)
+                    self.spin += rot * self.vx
+                else:
+                    self.vx = self.vx * B * (1 + self.spin)
+                    self.spin += rot * self.vx
+
+            if H - self.y <= self.R: # odboj spodaj
+                self.vy = - self.vy
+                if self.vx < 0:
+                    self.vx = self.vx * B * (1 + self.spin)
+                    self.spin -= rot * self.vx
+                else:
+                    self.vx = self.vx * B * (1 - self.spin)
+                    self.spin -= rot * self.vx
+
+            if self.x <= self.R: # odboj levo
                 self.vx = - self.vx
-                self.vy = self.vy * B * (1 + self.spin)
-                self.spin += 3/800 * self.vy
-            print(self.spin)
+                if self.vy < 0:
+                    self.vy = self.vy * B * (1 + self.spin)
+                    self.spin -= rot * self.vy
+                else:
+                    self.vy = self.vy * B * (1 - self.spin)
+                    self.spin -= rot * self.vy
+
+            if W - self.x <= self.R: # odboj desno
+                self.vx = - self.vx
+                if self.vy < 0:
+                    self.vy = self.vy * B * (1 - self.spin)
+                    self.spin += rot * self.vy
+                else:
+                    self.vy = self.vy * B * (1 + self.spin)
+                    self.spin += rot * self.vy
 
             # narisemo
             self.lines.append(self.canvas.create_line(x0, y0, self.x, self.y))
 
+            if self.checkPot(self.x, self.y, W, H):
+                print("Pot!")
+                break
+
         self.spin = 0
+
+    def checkPot(self, x, y, W, H):
+        # preveri, ali je kugla padla v vogalno luknjo,
+        # ce je, potem vrne True in odbijanje se ustavi
+        # levo zgoraj
+        if (x + d)**2 + (y + d)**2 < rVogal**2:
+            return True
+
+        # desno zgoraj
+        if (x-(W + d))**2 + (y + d)**2 < rVogal**2:
+            return True
+
+        # desno spodaj
+        if (x-(W + d))**2 + (y - (H + d))**2 < rVogal**2:
+            return True
+
+        # levo spodaj
+        if (x + d)**2 + (y - (H + d))**2 < rVogal**2:
+            return True
+
+        return False

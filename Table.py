@@ -1,10 +1,16 @@
 from tkinter import *
-import CueBall as ball
+import CueBall as cueBall
 import Cue as cue
 
-W = 353*2
-H = 480*2
+
+factor = 1.5 # faktor povecave
+W = 353*factor
+H = 480*factor
 D = 30 # širina roba
+
+R = 8*factor # radij kugel
+d = cueBall.d*factor # oddaljenost sredisca kroga preverjanja padca v luknjo
+rVogal = cueBall.rVogal*factor # radij tega kroga
 
 class Table():
     # cueX in cueY sta začetni koordinati bele
@@ -25,8 +31,14 @@ class Table():
         #self.cloth.create_polygon(D,D,W-D,D,W-D,H-D,D,H-D, fill='blue')
 
         # razred Table vsebuje objekte tipa Ball in Cue, ne pa njihovih podatkov
-        self.cueBall = ball.CueBall('white', 8, cueX, cueY, 0, 0, self.cloth)
+        self.cueBall = cueBall.CueBall('white', R, cueX, cueY, 0, 0, self.cloth)
         self.cue = cue.Cue(cueX, cueY, self.cloth)
+
+        # luknje
+        centers = [(-d,-d), (W+d,-d), (W+d,H+d), (-d,H+d)]
+        for c in centers:
+            a, b = c[0]+2, c[1]
+            self.cloth.create_oval(a-rVogal,b-rVogal,a+rVogal,b+rVogal, fill="black")
 
         self.energy = Scale(self.frameButtons, from_=0.1, to=800, length=200)
         self.energy.set(200)
