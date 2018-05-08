@@ -2,7 +2,7 @@ from tkinter import *
 
 k = 0.3 # trenje mize
 dt0 = 0.1 # casovni interval
-eps = 1 # toleranca pri upostevanju hitrosti
+eps = 10 # toleranca pri upostevanju hitrosti
 epsRob = 2 # toleranca pri upogibu roba, sicer problem pri zaznavanju odboja
 
 class CueBall():
@@ -46,8 +46,6 @@ class CueBall():
         # nastavimo koordinate bele nazaj na te, kjer bela res je
         self.x, self.y = self.x0, self.y0
 
-        print("x,y: ", x, y)
-
         # pobrisemo stare crte
         for line in self.lines:
             self.canvas.after(1, self.canvas.delete, line)
@@ -62,7 +60,6 @@ class CueBall():
         # dokler ima kugla nenicelno (vec od eps) hitrost, risemo nove crte, ki na koncu
         # predstavljajo potovanje bele
         while abs(self.vx) > eps or abs(self.vy) > eps:
-            print("vx,vy: ", self.vx, self.vy)
             # ce ne dodamo energije, se hitrosti vx in vy zmanjsujeta zaradi trenja
             # (najbrz) po formuli v = v * (1 - k*dt)
             # to hitrost sprejmemo le, ce ni tako velika, da bi daljica pobegnila z mize
@@ -90,7 +87,7 @@ class CueBall():
             self.x = mx
             dt = dt0
             while not (self.R - epsRob <= my <= H - self.R + epsRob):
-                dt = dt / 2
+                dt = dt * 0.9
                 self.vy = self.vy * (1 + k * dt)
                 my = y0 + self.vy * dt
             self.y = my
@@ -105,22 +102,3 @@ class CueBall():
 
             # narisemo
             self.lines.append(self.canvas.create_line(x0, y0, self.x, self.y))
-
-    def drawDtHelp(self, W, H):
-        # preverimo odboje
-        print("self.x,self.y", self.x,self.y)
-        if self.y <= self.R or H - self.y <= self.R: # odboj zgoraj ali spodaj
-            self.vy = - self.vy
-        if self.x <= self.R or W - self.x <= self.R:
-            self.vx = - self.vx
-        x0 = self.x
-        y0 = self.y
-        self.x = x0 + self.vx * dt0
-        self.y = y0 + self.vy * dt0
-        self.lines.append(self.canvas.create_line(x0,y0, self.x,self.y))
-
-    def sign(self, x):
-        if x < 0:
-            return -1
-        if x > 0:
-            return 1
