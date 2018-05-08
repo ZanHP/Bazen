@@ -1,9 +1,10 @@
 from tkinter import *
 
 k = 0.3 # trenje mize
-dt0 = 0.1 # casovni interval
+dt0 = 0.5 # casovni interval
 eps = 10 # toleranca pri upostevanju hitrosti
 epsRob = 2 # toleranca pri upogibu roba, sicer problem pri zaznavanju odboja
+B = 0.7 # upogib bande pri odboju vpliva na smeri odbite kugle
 
 class CueBall():
     def __init__(self, barva, R, x, y, vx, vy, canvas):
@@ -20,6 +21,9 @@ class CueBall():
         # hitrost za risanje crte
         self.vx = vx
         self.vy = vy
+
+        # rotacija, ce vec od 0, se vrti v levo
+        self.spin = 0
 
         self.canvas = canvas
         self.id = self.canvas.create_oval(self.x - self.R, self.y - self.R, self.x + self.R, self.y + self.R, fill=barva)
@@ -38,6 +42,7 @@ class CueBall():
         self.canvas.coords(self.id, self.x - self.R, self.y - self.R, self.x + self.R, self.y + self.R)
 
     def drawDt(self, direction, energy, W, H):
+        print("draw")
         # energy - energija, ki jo kugla sprejme. Ce smo v trenutku, ki ni prvi
         # po udarcu, je dodana energija enaka 0
         # direction - smer, v kateri se energija manifestira (normiran vektor)
@@ -80,25 +85,32 @@ class CueBall():
             # po tem casu, moramo, ce zelimo daljico povleci do prejsnjega trenutka,
             # tudi primerno povacati hitrost.
             dt = dt0
-            while not (self.R - epsRob <= mx <= W - self.R + epsRob):
-                dt = dt * 0.9
+            while not (self.R - epsRob <= mx <= W - self.R + epsRob) or \
+                    not (self.R - epsRob <= my <= H - self.R + epsRob):
+                dt = dt * 0.5
                 self.vx = self.vx * (1 + k * dt)
                 mx = x0 + self.vx * dt
-            self.x = mx
-            dt = dt0
-            while not (self.R - epsRob <= my <= H - self.R + epsRob):
-                dt = dt * 0.9
                 self.vy = self.vy * (1 + k * dt)
                 my = y0 + self.vy * dt
+            self.x = mx
             self.y = my
 
             # preverimo odboje
-            # ce se kugla odbija, obrnemo smer hitrosti
-            # to se pozna pri naslednjem koraku zanke
+            # Ce se kugla odbija, obrnemo smer hitrosti,
+            # to se pozna pri naslednjem koraku zanke.
+            # Z 0<B<1 mnozimo tisto koordinato hitrosti, ki ne obrne smeri,
+            # saj je tak odboj je bolj realen.
             if self.y <= self.R or H - self.y <= self.R:  # odboj zgoraj ali spodaj
                 self.vy = - self.vy
+                self.vx = self.vx * B * (1 + self.spin)
+                self.spin += 3/800 * self.vx
             if self.x <= self.R or W - self.x <= self.R: # odboj levo ali desno
                 self.vx = - self.vx
+                self.vy = self.vy * B * (1 + self.spin)
+                self.spin += 3/800 * self.vy
+            print(self.spin)
 
             # narisemo
             self.lines.append(self.canvas.create_line(x0, y0, self.x, self.y))
+
+        self.spin = 0

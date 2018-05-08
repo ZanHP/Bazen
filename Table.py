@@ -2,8 +2,8 @@ from tkinter import *
 import CueBall as ball
 import Cue as cue
 
-W = 353
-H = 480
+W = 353*2
+H = 480*2
 D = 30 # širina roba
 
 class Table():
