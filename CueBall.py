@@ -1,7 +1,9 @@
 from tkinter import *
 
 k = 0.3 # trenje mize
-dt = 1 # casovni interval
+dt0 = 0.1 # casovni interval
+eps = 1 # toleranca pri upostevanju hitrosti
+epsRob = 2 # toleranca pri upogibu roba, sicer problem pri zaznavanju odboja
 
 class CueBall():
     def __init__(self, barva, R, x, y, vx, vy, canvas):
@@ -35,7 +37,7 @@ class CueBall():
         self.y0 = y
         self.canvas.coords(self.id, self.x - self.R, self.y - self.R, self.x + self.R, self.y + self.R)
 
-    def drawDt(self, direction, energy=0):
+    def drawDt(self, direction, energy, W, H):
         # energy - energija, ki jo kugla sprejme. Ce smo v trenutku, ki ni prvi
         # po udarcu, je dodana energija enaka 0
         # direction - smer, v kateri se energija manifestira (normiran vektor)
@@ -57,21 +59,64 @@ class CueBall():
             self.vx = energy * x
             self.vy = energy * y
 
-        # dokler ima kugla pozitivno hitrost, podaljsujemo crto
-        while self.vx != 0 or self.vy != 0:
+        # dokler ima kugla nenicelno (vec od eps) hitrost, risemo nove crte, ki na koncu
+        # predstavljajo potovanje bele
+        while abs(self.vx) > eps or abs(self.vy) > eps:
             print("vx,vy: ", self.vx, self.vy)
             # ce ne dodamo energije, se hitrosti vx in vy zmanjsujeta zaradi trenja
-            sx, sy = self.sign(self.vx), self.sign(self.vy)
-            self.vx = sx*(abs(self.vx)*(1 - k * dt)) if abs(self.vx) > k * dt else 0
-            self.vy = sy*(abs(self.vy)*(1 - k * dt)) if abs(self.vy) > k * dt else 0
-            self.drawDtHelp()
+            # (najbrz) po formuli v = v * (1 - k*dt)
+            # to hitrost sprejmemo le, ce ni tako velika, da bi daljica pobegnila z mize
+            # (to preverjamo kasneje)
+            self.vx = self.vx*(1 - k * dt0) if abs(self.vx) > k * dt0 else 0
+            self.vy = self.vy*(1 - k * dt0) if abs(self.vy) > k * dt0 else 0
 
-    def drawDtHelp(self):
-        print("risem")
+            # nastavimo prvi krajisci daljice
+            x0 = self.x
+            y0 = self.y
+
+            # mozni drugi krajisci, morda sta izven mize
+            mx = x0 + self.vx * dt0
+            my = y0 + self.vy * dt0
+
+            # cas manjsamo, dokler nista drugi krajisci na mizi
+            # Ker smo najprej poskusili s casom dt0 in pri tem dobili hitrost
+            # po tem casu, moramo, ce zelimo daljico povleci do prejsnjega trenutka,
+            # tudi primerno povacati hitrost.
+            dt = dt0
+            while not (self.R - epsRob <= mx <= W - self.R + epsRob):
+                dt = dt * 0.9
+                self.vx = self.vx * (1 + k * dt)
+                mx = x0 + self.vx * dt
+            self.x = mx
+            dt = dt0
+            while not (self.R - epsRob <= my <= H - self.R + epsRob):
+                dt = dt / 2
+                self.vy = self.vy * (1 + k * dt)
+                my = y0 + self.vy * dt
+            self.y = my
+
+            # preverimo odboje
+            # ce se kugla odbija, obrnemo smer hitrosti
+            # to se pozna pri naslednjem koraku zanke
+            if self.y <= self.R or H - self.y <= self.R:  # odboj zgoraj ali spodaj
+                self.vy = - self.vy
+            if self.x <= self.R or W - self.x <= self.R: # odboj levo ali desno
+                self.vx = - self.vx
+
+            # narisemo
+            self.lines.append(self.canvas.create_line(x0, y0, self.x, self.y))
+
+    def drawDtHelp(self, W, H):
+        # preverimo odboje
+        print("self.x,self.y", self.x,self.y)
+        if self.y <= self.R or H - self.y <= self.R: # odboj zgoraj ali spodaj
+            self.vy = - self.vy
+        if self.x <= self.R or W - self.x <= self.R:
+            self.vx = - self.vx
         x0 = self.x
         y0 = self.y
-        self.x = x0 + self.vx * dt
-        self.y = y0 + self.vy * dt
+        self.x = x0 + self.vx * dt0
+        self.y = y0 + self.vy * dt0
         self.lines.append(self.canvas.create_line(x0,y0, self.x,self.y))
 
     def sign(self, x):

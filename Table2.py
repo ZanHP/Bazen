@@ -55,10 +55,10 @@ class Table():
     def draw_line(self, v):
         # v0 - začetna točka
         # v - smerni vektor
-        # reflection - True, če je odboj, sicer False
         N = self.norma2(v)**0.5
         v = (v[0]/N, v[1]/N)
-        self.cueBall.drawDt(v, self.energy.get())
+        # podamo se W in H, da ni treba cesa importati
+        self.cueBall.drawDt(v, self.energy.get(), W, H)
 
 
 
