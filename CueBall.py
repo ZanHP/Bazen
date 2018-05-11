@@ -7,9 +7,6 @@ epsRob = 2 # toleranca pri upogibu roba, sicer problem pri zaznavanju odboja
 B = 0.7 # upogib bande pri odboju vpliva na smeri odbite kugle
 rot = 0.025 # vpliv bande na povacanje rotacije odbite kugle
 
-d = 15 # oddaljenost sredisca kroga preverjanja padca v luknjo
-rVogal = 40 # radij tega kroga
-
 class CueBall():
     def __init__(self, barva, R, x, y, vx, vy, canvas):
         self.R = R
@@ -45,7 +42,7 @@ class CueBall():
         self.y0 = y
         self.canvas.coords(self.id, self.x - self.R, self.y - self.R, self.x + self.R, self.y + self.R)
 
-    def drawDt(self, direction, energy, W, H):
+    def drawDt(self, direction, energy, W, H, d, rVogal):
         print("draw")
         # energy - energija, ki jo kugla sprejme. Ce smo v trenutku, ki ni prvi
         # po udarcu, je dodana energija enaka 0
@@ -99,7 +96,7 @@ class CueBall():
             self.x = mx
             self.y = my
 
-            N = self.vx**2 + self.vy**2
+            #N = self.vx**2 + self.vy**2
             #print("00:vx,vy", self.vx, self.vy)
 
             # preverimo odboje
@@ -146,13 +143,13 @@ class CueBall():
             # narisemo
             self.lines.append(self.canvas.create_line(x0, y0, self.x, self.y))
 
-            if self.checkPot(self.x, self.y, W, H):
+            if self.checkPot(self.x, self.y, W, H, d, rVogal):
                 print("Pot!")
                 break
 
         self.spin = 0
 
-    def checkPot(self, x, y, W, H):
+    def checkPot(self, x, y, W, H, d, rVogal):
         # preveri, ali je kugla padla v vogalno luknjo,
         # ce je, potem vrne True in odbijanje se ustavi
         # levo zgoraj

@@ -9,8 +9,8 @@ H = 480*factor
 D = 30 # širina roba
 
 R = 8*factor # radij kugel
-d = cueBall.d*factor # oddaljenost sredisca kroga preverjanja padca v luknjo
-rVogal = cueBall.rVogal*factor # radij tega kroga
+d = 10*factor # oddaljenost sredisca kroga preverjanja padca v luknjo
+rVogal = 40*factor # radij tega kroga
 
 class Table():
     # cueX in cueY sta začetni koordinati bele
@@ -70,8 +70,8 @@ class Table():
         # v - smerni vektor
         N = self.norma2(v)**0.5
         v = (v[0]/N, v[1]/N)
-        # podamo se W in H, da ni treba cesa importati
-        self.cueBall.drawDt(v, self.energy.get(), W, H)
+        # podamo se W, H, d, rVogal da ni treba cesa importati
+        self.cueBall.drawDt(v, self.energy.get(), W, H, d, rVogal)
 
     def norma2(self, v):
         return v[0]**2 + v[1]**2
