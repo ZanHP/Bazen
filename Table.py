@@ -23,7 +23,7 @@ class Table():
 
         # frame za gumbe
         self.frameButtons = Frame(self.master, width=100, height=H)
-        self.frameButtons.grid(row=0, column=1, rowspan=3)
+        self.frameButtons.grid(row=0, column=1, rowspan=3, columnspan=2)
 
         # miza z okvirjem vred
         self.cloth = Canvas(self.frame, bd=0, bg='brown', width=W, height=H)
@@ -41,8 +41,12 @@ class Table():
             self.cloth.create_oval(a-rVogal,b-rVogal,a+rVogal,b+rVogal, fill="black")
 
         self.energy = Scale(self.frameButtons, from_=0.1, to=800, length=200)
-        self.energy.set(200)
+        self.energy.set(160)
         self.energy.grid(row=0, column=0)
+
+        self.forbackScale = Scale(self.frameButtons, from_=-100, to=100, length=200)
+        self.forbackScale.set(20)
+        self.forbackScale.grid(row=0, column=1)
 
         # seznam vseh narisanih črt
         self.lines = []
@@ -71,7 +75,7 @@ class Table():
         N = self.norma2(v)**0.5
         v = (v[0]/N, v[1]/N)
         # podamo se W, H, d, rVogal da ni treba cesa importati
-        self.cueBall.drawDt(v, self.energy.get(), W, H, d, rVogal)
+        self.cueBall.drawDt(v, self.energy.get(), self.forbackScale.get(), W, H, d, rVogal)
 
     def norma2(self, v):
         return v[0]**2 + v[1]**2

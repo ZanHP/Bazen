@@ -1,6 +1,7 @@
 from tkinter import *
 
 k = 0.3 # trenje mize
+kF = 0.003 # vpliv mize na forback in forbacka na hitrost
 dt0 = 0.5 # casovni interval
 eps = 2 # toleranca pri upostevanju hitrosti
 epsRob = 2 # toleranca pri upogibu roba, sicer problem pri zaznavanju odboja
@@ -24,7 +25,10 @@ class CueBall():
         self.vy = vy
 
         # rotacija, ce vec od 0, se vrti v levo
-        self.spin = 0
+        self.english = 0
+
+        # rotacija naprej in nazaj
+        self.forback = 0
 
         self.canvas = canvas
         self.id = self.canvas.create_oval(self.x - self.R, self.y - self.R, self.x + self.R, self.y + self.R, fill=barva)
@@ -42,7 +46,7 @@ class CueBall():
         self.y0 = y
         self.canvas.coords(self.id, self.x - self.R, self.y - self.R, self.x + self.R, self.y + self.R)
 
-    def drawDt(self, direction, energy, W, H, d, rVogal):
+    def drawDt(self, direction, energy, forback, W, H, d, rVogal):
         print("draw")
         # energy - energija, ki jo kugla sprejme. Ce smo v trenutku, ki ni prvi
         # po udarcu, je dodana energija enaka 0
@@ -62,6 +66,7 @@ class CueBall():
             # zato lahko energijo pretvorimo v hitrost takole:
             self.vx = energy * x
             self.vy = energy * y
+        self.forback = forback
 
         # dokler ima kugla nenicelno (vec od eps) hitrost, risemo nove crte, ki na koncu
         # predstavljajo potovanje bele
@@ -70,8 +75,8 @@ class CueBall():
             # (najbrz) po formuli v = v * (1 - k*dt)
             # to hitrost sprejmemo le, ce ni tako velika, da bi daljica pobegnila z mize
             # (to preverjamo kasneje)
-            self.vx = self.vx*(1 - k * dt0) if abs(self.vx) > k * dt0 else 0
-            self.vy = self.vy*(1 - k * dt0) if abs(self.vy) > k * dt0 else 0
+            self.vx = self.vx*(1 - k * dt0) if abs(self.vx) - k * dt0 > 0 else 0
+            self.vy = self.vy*(1 - k * dt0) if abs(self.vy) - k * dt0 > 0 else 0
 
             # nastavimo prvi krajisci daljice
             x0 = self.x
@@ -93,8 +98,31 @@ class CueBall():
                 mx = x0 + self.vx * dt
                 self.vy = self.vy * (1 + k * dt)
                 my = y0 + self.vy * dt
-            self.x = mx
-            self.y = my
+
+            # preden dokoncno dolocimo drugi krajisci, moramo upostevati se forback
+            # hitrost
+            v = (self.vx**2 + self.vy**2)**0.5
+            # rotacijo forback povecamo, ce velja, da je manj od v/self.R
+            # ustrezno zmanjsamo hitrost
+            # TODO razmisliti koliko se res zmanjsa/poveca hitrost
+            print("v1: ",v)
+            if self.forback < v/self.R:
+                self.forback += v/self.R * kF * dt
+                self.vx += self.vx * self.forback * kF * dt
+                self.vy += self.vy * self.forback * kF * dt
+                print(self.forback)
+                print("v2: ", v)
+            # sicer jo zmanjsamo in povecamo hitrost
+            elif self.forback > v/self.R:
+                self.forback -= v / self.R * kF * dt
+                self.vx += self.vx * self.forback * kF * dt
+                self.vy += self.vy * self.forback * kF * dt
+                print(self.forback)
+                print("v2: ", v)
+
+            # dolocimo drugi krajisci
+            self.x = x0 + self.vx * dt
+            self.y = y0 + self.vy * dt
 
             #N = self.vx**2 + self.vy**2
             #print("00:vx,vy", self.vx, self.vy)
@@ -104,41 +132,46 @@ class CueBall():
             # to se pozna pri naslednjem koraku zanke.
             # Z 0<B<1 mnozimo tisto koordinato hitrosti, ki ne obrne smeri,
             # tak odboj je potem bolj realen.
+            # Privzamemo, da se pri vsakem odboju forback iznici.
             if self.y <= self.R:  # odboj zgoraj
                 self.vy = - self.vy
                 if self.vx < 0:
-                    self.vx = self.vx * B * (1 - self.spin)
-                    self.spin += rot * self.vx
+                    self.vx = self.vx * B * (1 - self.english)
+                    self.english += rot * self.vx
                 else:
-                    self.vx = self.vx * B * (1 + self.spin)
-                    self.spin += rot * self.vx
+                    self.vx = self.vx * B * (1 + self.english)
+                    self.english += rot * self.vx
+                self.forback = 0
 
             if H - self.y <= self.R: # odboj spodaj
                 self.vy = - self.vy
                 if self.vx < 0:
-                    self.vx = self.vx * B * (1 + self.spin)
-                    self.spin -= rot * self.vx
+                    self.vx = self.vx * B * (1 + self.english)
+                    self.english -= rot * self.vx
                 else:
-                    self.vx = self.vx * B * (1 - self.spin)
-                    self.spin -= rot * self.vx
+                    self.vx = self.vx * B * (1 - self.english)
+                    self.english -= rot * self.vx
+                self.forback = 0
 
             if self.x <= self.R: # odboj levo
                 self.vx = - self.vx
                 if self.vy < 0:
-                    self.vy = self.vy * B * (1 + self.spin)
-                    self.spin -= rot * self.vy
+                    self.vy = self.vy * B * (1 + self.english)
+                    self.english -= rot * self.vy
                 else:
-                    self.vy = self.vy * B * (1 - self.spin)
-                    self.spin -= rot * self.vy
+                    self.vy = self.vy * B * (1 - self.english)
+                    self.english -= rot * self.vy
+                self.forback = 0
 
             if W - self.x <= self.R: # odboj desno
                 self.vx = - self.vx
                 if self.vy < 0:
-                    self.vy = self.vy * B * (1 - self.spin)
-                    self.spin += rot * self.vy
+                    self.vy = self.vy * B * (1 - self.english)
+                    self.english += rot * self.vy
                 else:
-                    self.vy = self.vy * B * (1 + self.spin)
-                    self.spin += rot * self.vy
+                    self.vy = self.vy * B * (1 + self.english)
+                    self.english += rot * self.vy
+                self.forback = 0
 
             # narisemo
             self.lines.append(self.canvas.create_line(x0, y0, self.x, self.y))
@@ -147,7 +180,9 @@ class CueBall():
                 print("Pot!")
                 break
 
-        self.spin = 0
+        self.english = 0
+        self.forback = 0
+        print("DONE")
 
     def checkPot(self, x, y, W, H, d, rVogal):
         # preveri, ali je kugla padla v vogalno luknjo,
